@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroSpend — AI Expense Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #6C63FF;
+    --violet: #A855F7;
+    --bg: #0F0F1A;
+    --surface: rgba(255,255,255,0.06);
+    --border: rgba(255,255,255,0.08);
+    --text: #FFFFFF;
+    --muted: rgba(255,255,255,0.4);
+    --green: #10B981;
+    --orange: #F59E0B;
+    --red: #EF4444;
+    --teal: #4ECDC4;
+    --gold: #FFD700;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 24px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(108,99,255,0.2), transparent 70%);
+    top: -100px; left: 50%; transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .app-icon {
+    width: 90px; height: 90px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, var(--purple), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px;
+    margin-bottom: 24px;
+    box-shadow: 0 20px 60px rgba(108,99,255,0.4);
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .hero h1 {
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff 40%, var(--violet));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    line-height: 1.1;
+  }
+  .hero p {
+    font-size: 18px; color: var(--muted); max-width: 520px; line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .badge-row {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    margin-bottom: 48px;
+  }
+  .badge {
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .badge.ai { border-color: rgba(108,99,255,0.4); color: var(--purple); background: rgba(108,99,255,0.1); }
+  .badge.live { border-color: rgba(16,185,129,0.4); color: var(--green); background: rgba(16,185,129,0.1); }
+
+  /* ── Phones showcase ── */
+  .phones-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 80px;
+    padding: 0 16px;
+  }
+  .phone {
+    width: 220px;
+    border-radius: 36px;
+    background: #161625;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    transition: transform 0.3s ease;
+  }
+  .phone:hover { transform: translateY(-8px) scale(1.02); }
+  .phone.center {
+    transform: scale(1.08);
+    box-shadow: 0 50px 100px rgba(108,99,255,0.3), 0 0 0 1.5px rgba(108,99,255,0.3);
+    z-index: 2;
+  }
+  .phone.center:hover { transform: scale(1.08) translateY(-8px); }
+
+  .phone-header {
+    background: rgba(255,255,255,0.03);
+    padding: 12px 16px 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px;
+  }
+  .status-bar { display: flex; gap: 4px; }
+  .sb-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  .phone-screen { padding: 0 0 16px; }
+
+  /* Screen: Dashboard */
+  .dash-greeting { padding: 16px 16px 8px; }
+  .dash-greeting .sub { font-size: 10px; color: var(--muted); }
+  .dash-greeting .name { font-size: 18px; font-weight: 700; }
+  .dash-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    float: right; margin-top: -36px;
+  }
+
+  .spend-card {
+    margin: 8px 12px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(108,99,255,0.8), rgba(168,85,247,0.6));
+    padding: 20px;
+    position: relative; overflow: hidden;
+  }
+  .spend-card::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
+  }
+  .spend-label { font-size: 10px; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
+  .spend-amount { font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 12px; }
+  .spend-stats { display: flex; gap: 16px; }
+  .stat-item { font-size: 10px; color: rgba(255,255,255,0.6); }
+  .stat-val { font-size: 12px; font-weight: 600; color: #fff; }
+
+  .section-title { font-size: 12px; font-weight: 600; padding: 12px 16px 8px; color: rgba(255,255,255,0.7); }
+
+  .expense-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px;
+  }
+  .exp-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .exp-info { flex: 1; }
+  .exp-name { font-size: 12px; font-weight: 600; }
+  .exp-date { font-size: 10px; color: var(--muted); }
+  .exp-amount { font-size: 13px; font-weight: 600; }
+  .ai-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--violet); display: inline-block; margin-left: 4px; vertical-align: middle; }
+
+  /* Donut chart */
+  .mini-chart { display: flex; justify-content: center; padding: 8px; }
+  .donut { position: relative; width: 100px; height: 100px; }
+  .donut svg { transform: rotate(-90deg); }
+  .donut-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .donut-sub { font-size: 8px; color: var(--muted); }
+
+  /* AI Screen */
+  .ai-header {
+    padding: 16px;
+    background: linear-gradient(180deg, rgba(108,99,255,0.1), transparent);
+  }
+  .ai-title { font-size: 18px; font-weight: 700; }
+  .ai-badge { font-size: 9px; background: rgba(108,99,255,0.2); color: var(--purple); padding: 2px 8px; border-radius: 100px; display: inline-block; margin-top: 2px; }
+
+  .predict-card {
+    margin: 0 12px 10px;
+    padding: 14px;
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+  .predict-label { font-size: 9px; color: var(--violet); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .predict-amount { font-size: 26px; font-weight: 700; margin: 4px 0; }
+  .predict-sub { font-size: 9px; color: var(--muted); }
+
+  .insight-card {
+    margin: 0 12px 8px;
+    padding: 12px;
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .insight-card.warn { border-color: rgba(245,158,11,0.3); }
+  .insight-card.info { border-color: rgba(108,99,255,0.3); }
+  .insight-title { font-size: 11px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .insight-body { font-size: 10px; color: var(--muted); line-height: 1.5; }
+  .insight-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Budget screen */
+  .budget-ring {
+    display: flex; justify-content: center; padding: 20px;
+    position: relative;
+  }
+  .ring-label {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .ring-pct { font-size: 22px; font-weight: 700; }
+  .ring-sub { font-size: 9px; color: var(--muted); }
+
+  .budget-stats { display: flex; justify-content: space-around; padding: 0 16px 16px; }
+  .bstat { text-align: center; }
+  .bstat-val { font-size: 13px; font-weight: 700; }
+  .bstat-label { font-size: 9px; color: var(--muted); }
+
+  .cat-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+  }
+  .cat-icon-sm {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0;
+  }
+  .cat-bar-wrap { flex: 1; }
+  .cat-name { font-size: 10px; font-weight: 600; margin-bottom: 3px; }
+  .cat-bar-bg { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.06); }
+  .cat-bar { height: 4px; border-radius: 2px; }
+  .cat-amount { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); }
+
+  /* Tab bar */
+  .tab-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 8px;
+    background: rgba(28,28,46,0.95);
+    border-top: 1px solid var(--border);
+    margin: 0 8px 8px;
+    border-radius: 20px;
+  }
+  .tab-item {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 8px; color: var(--muted);
+    cursor: pointer; transition: color 0.2s;
+  }
+  .tab-item.active { color: var(--purple); }
+  .tab-icon { font-size: 18px; }
+  .tab-fab {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 8px 20px rgba(108,99,255,0.4);
+    margin-top: -18px;
+  }
+
+  /* ── Sections ── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 24px;
+  }
+  .section-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .section-header h2 {
+    font-size: clamp(24px, 4vw, 40px);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .section-header p { color: var(--muted); font-size: 16px; max-width: 480px; margin: 0 auto; }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--purple), var(--violet));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Architecture grid */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .arch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .arch-card:hover {
+    border-color: rgba(108,99,255,0.3);
+    transform: translateY(-4px);
+  }
+  .arch-icon { font-size: 32px; margin-bottom: 12px; }
+  .arch-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .arch-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .arch-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .tag {
+    font-size: 10px; font-weight: 600; padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(108,99,255,0.1);
+    color: var(--purple);
+    border: 1px solid rgba(108,99,255,0.2);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Feature table */
+  .feature-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .feature-table th {
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .feature-table th.premium-col {
+    color: var(--purple);
+    text-align: center;
+  }
+  .feature-table td {
+    padding: 14px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .feature-table td.center { text-align: center; }
+  .check { color: var(--green); font-size: 18px; }
+  .cross { color: rgba(255,255,255,0.15); font-size: 18px; }
+
+  /* AI prompts */
+  .prompt-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .prompt-block::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--purple), var(--violet));
+    border-radius: 3px 0 0 3px;
+  }
+  .prompt-label {
+    font-size: 11px; font-weight: 700;
+    color: var(--purple); letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+  .prompt-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: rgba(255,255,255,0.7);
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  /* Roadmap */
+  .roadmap {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .phase-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .phase-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+  .phase-label.mvp { color: var(--green); }
+  .phase-label.p2 { color: var(--orange); }
+  .phase-label.p3 { color: var(--violet); }
+  .phase-item {
+    font-size: 13px; color: var(--muted);
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .phase-item:last-child { border: none; }
+
+  footer {
+    text-align: center;
+    padding: 40px 24px;
+    color: rgba(255,255,255,0.15);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+  }
+  footer span { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="app-icon">🧠</div>
+  <h1>NeuroSpend</h1>
+  <p>Production-ready AI expense tracker — SwiftUI + MVVM + Firebase + Claude API</p>
+  <div class="badge-row">
+    <span class="badge ai">Claude AI</span>
+    <span class="badge live">Firebase</span>
+    <span class="badge">RevenueCat</span>
+    <span class="badge">SwiftUI</span>
+    <span class="badge">MVVM</span>
+    <span class="badge">24 Currencies</span>
+    <span class="badge">Dark Mode</span>
+  </div>
+</div>
+
+<!-- Phone Screens -->
+<div class="phones-container">
+
+  <!-- Dashboard -->
+  <div class="phone" style="margin-bottom: 0;">
+    <div class="phone-header">
+      <span style="font-size:11px;color:rgba(255,255,255,0.5)">9:41</span>
+      <div class="status-bar">
+        <div class="sb-dot" style="background:#4ade80"></div>
+        <div class="sb-dot" style="background:#facc15"></div>
+        <div class="sb-dot" style="background:#f87171"></div>
+      </div>
+    </div>
+    <div class="phone-screen">
+      <div class="dash-greeting">
+        <div class="dash-avatar">A</div>
+        <div class="sub">Good Morning,</div>
+        <div class="name" style="font-size:16px;">Alex</div>
+      </div>
+      <div class="spend-card">
+        <div class="spend-label">Total This Month</div>
+        <div class="spend-amount">$1,247.80</div>
+        <div class="spend-stats">
+          <div class="stat-item"><div class="stat-val">$41.59</div>Daily Avg</div>
+          <div class="stat-item"><div class="stat-val">31</div>Expenses</div>
+        </div>
+      </div>
+      <!-- Budget bar -->
+      <div style="margin:8px 12px;padding:12px;background:rgba(255,255,255,0.05);border-radius:14px;border:1px solid rgba(255,255,255,0.08)">
+        <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:8px">
+          <span style="font-weight:600">Monthly Budget</span>
+          <span style="color:#f59e0b;font-size:9px">⚠️ 83% used</span>
+        </div>
+        <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+          <div style="width:83%;height:100%;background:linear-gradient(90deg,#f59e0b,#ef4444);border-radius:4px"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.4);margin-top:5px">
+          <span>$1,247.80 spent</span><span>$1,500.00 limit</span>
+        </div>
+      </div>
+      <div class="section-title">Recent</div>
+      <div class="expense-row">
+        <div class="exp-icon" style="background:rgba(255,107,107,0.15)">☕</div>
+        <div class="exp-info">
+          <div class="exp-name">Starbucks<span class="ai-dot"></span></div>
+          <div class="exp-date">Today</div>
+        </div>
+        <div class="exp-amount" style="color:rgba(255,255,255,0.8)">-$6.50</div>
+      </div>
+      <div class="expense-row">
+        <div class="exp-icon" style="background:rgba(78,205,196,0.15)">🚗</div>
+        <div class="exp-info">
+          <div class="exp-name">Uber<span class="ai-dot"></span></div>
+          <div class="exp-date">Yesterday</div>
+        </div>
+        <div class="exp-amount" style="color:rgba(255,255,255,0.8)">-$18.20</div>
+      </div>
+      <div class="expense-row">
+        <div class="exp-icon" style="background:rgba(195,166,255,0.15)">🛍</div>
+        <div class="exp-info">
+          <div class="exp-name">Amazon<span class="ai-dot"></span></div>
+          <div class="exp-date">Dec 28</div>
+        </div>
+        <div class="exp-amount" style="color:rgba(255,255,255,0.8)">-$49.99</div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item active">🏠<span>Home</span></div>
+        <div class="tab-item">🧠<span>AI</span></div>
+        <div class="tab-fab">+</div>
+        <div class="tab-item">🥧<span>Budget</span></div>
+        <div class="tab-item">⚙️<span>Settings</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Insights (center, featured) -->
+  <div class="phone center">
+    <div class="phone-header">
+      <span style="font-size:11px;color:rgba(255,255,255,0.5)">9:41</span>
+      <div class="status-bar">
+        <div class="sb-dot" style="background:#4ade80"></div>
+        <div class="sb-dot" style="background:#facc15"></div>
+        <div class="sb-dot" style="background:#f87171"></div>
+      </div>
+    </div>
+    <div class="phone-screen">
+      <div class="ai-header">
+        <div class="ai-title">AI Insights</div>
+        <div class="ai-badge">✦ Powered by Claude</div>
+      </div>
+      <div class="predict-card">
+        <div class="predict-label">📈 End-of-Month Prediction</div>
+        <div class="predict-amount">$1,892</div>
+        <div class="predict-sub">Based on your current spending velocity</div>
+      </div>
+      <!-- Smart tip -->
+      <div style="margin:0 12px 10px;padding:12px;background:rgba(108,99,255,0.08);border-radius:14px;border:1px solid rgba(108,99,255,0.2)">
+        <div style="font-size:9px;color:var(--purple);font-weight:700;margin-bottom:6px">💡 SMART TIP</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.75);line-height:1.5">Cut 2 subscriptions you haven't used this month to save $28 instantly.</div>
+      </div>
+      <div class="insight-card warn">
+        <div class="insight-title">
+          <span class="insight-dot" style="background:#f59e0b"></span>
+          Food Spending Up 23%
+        </div>
+        <div class="insight-body">You've spent $312 on food this month vs $254 avg. Consider meal prep to save ~$60.</div>
+      </div>
+      <div class="insight-card info">
+        <div class="insight-title">
+          <span class="insight-dot" style="background:var(--purple)"></span>
+          Subscriptions Detected
+        </div>
+        <div class="insight-body">8 recurring charges found totaling $127/month. Netflix, Spotify, Adobe, and 5 more.</div>
+      </div>
+      <div class="insight-card" style="border-color:rgba(239,68,68,0.3)">
+        <div class="insight-title">
+          <span class="insight-dot" style="background:#ef4444"></span>
+          🚨 Anomaly Detected
+        </div>
+        <div class="insight-body">$340 Amazon charge is 4x your average. Review if this is expected.</div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item">🏠<span>Home</span></div>
+        <div class="tab-item active">🧠<span>AI</span></div>
+        <div class="tab-fab">+</div>
+        <div class="tab-item">🥧<span>Budget</span></div>
+        <div class="tab-item">⚙️<span>Settings</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget -->
+  <div class="phone" style="margin-bottom:0">
+    <div class="phone-header">
+      <span style="font-size:11px;color:rgba(255,255,255,0.5)">9:41</span>
+      <div class="status-bar">
+        <div class="sb-dot" style="background:#4ade80"></div>
+        <div class="sb-dot" style="background:#facc15"></div>
+        <div class="sb-dot" style="background:#f87171"></div>
+      </div>
+    </div>
+    <div class="phone-screen">
+      <div style="padding:16px 16px 4px;font-size:18px;font-weight:700">Budget</div>
+      <div class="budget-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="14"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="url(#grad)" stroke-width="14" stroke-linecap="round"
+            stroke-dasharray="314" stroke-dashoffset="53" transform="rotate(-90 60 60)"/>
+          <defs>
+            <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#6C63FF"/>
+              <stop offset="100%" stop-color="#A855F7"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="ring-label">
+          <div class="ring-pct">83%</div>
+          <div class="ring-sub">used</div>
+        </div>
+      </div>
+      <div class="budget-stats">
+        <div class="bstat"><div class="bstat-val">$1,248</div><div class="bstat-label">Spent</div></div>
+        <div class="bstat"><div class="bstat-val" style="color:#10b981">$252</div><div class="bstat-label">Remaining</div></div>
+        <div class="bstat"><div class="bstat-val">$1,500</div><div class="bstat-label">Budget</div></div>
+      </div>
+      <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
+      <div style="padding:8px 16px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.5)">By Category</div>
+      <div class="cat-row">
+        <div class="cat-icon-sm" style="background:rgba(255,107,107,0.15)">☕</div>
+        <div class="cat-bar-wrap">
+          <div class="cat-name">Food & Drinks</div>
+          <div class="cat-bar-bg"><div class="cat-bar" style="width:68%;background:#FF6B6B"></div></div>
+        </div>
+        <div class="cat-amount">$312</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-icon-sm" style="background:rgba(195,166,255,0.15)">🛍</div>
+        <div class="cat-bar-wrap">
+          <div class="cat-name">Shopping</div>
+          <div class="cat-bar-bg"><div class="cat-bar" style="width:48%;background:#C3A6FF"></div></div>
+        </div>
+        <div class="cat-amount">$220</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-icon-sm" style="background:rgba(78,205,196,0.15)">🚗</div>
+        <div class="cat-bar-wrap">
+          <div class="cat-name">Transport</div>
+          <div class="cat-bar-bg"><div class="cat-bar" style="width:32%;background:#4ECDC4"></div></div>
+        </div>
+        <div class="cat-amount">$148</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-icon-sm" style="background:rgba(255,154,60,0.15)">🔄</div>
+        <div class="cat-bar-wrap">
+          <div class="cat-name">Subscriptions</div>
+          <div class="cat-bar-bg"><div class="cat-bar" style="width:28%;background:#FF9A3C"></div></div>
+        </div>
+        <div class="cat-amount">$127</div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item">🏠<span>Home</span></div>
+        <div class="tab-item">🧠<span>AI</span></div>
+        <div class="tab-fab">+</div>
+        <div class="tab-item active">🥧<span>Budget</span></div>
+        <div class="tab-item">⚙️<span>Settings</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Architecture -->
+<div class="section">
+  <div class="section-header">
+    <h2>Clean <span class="gradient-text">Architecture</span></h2>
+    <p>Every layer is intentional, testable, and scalable from day one</p>
+  </div>
+  <div class="arch-grid">
+    <div class="arch-card">
+      <div class="arch-icon">📱</div>
+      <div class="arch-title">SwiftUI Views</div>
+      <div class="arch-desc">7 screens with glassmorphism cards, Swift Charts, smooth animations, and dark mode. Zero UIKit dependency.</div>
+      <div class="arch-tags">
+        <span class="tag">SwiftUI</span>
+        <span class="tag">Swift Charts</span>
+        <span class="tag">Combine</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <div class="arch-icon">🏗</div>
+      <div class="arch-title">MVVM ViewModels</div>
+      <div class="arch-desc">5 @MainActor ViewModels with @Published state. AuthVM, ExpenseVM, AIInsightsVM, BudgetVM, SubscriptionVM.</div>
+      <div class="arch-tags">
+        <span class="tag">@MainActor</span>
+        <span class="tag">async/await</span>
+        <span class="tag">@Published</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <div class="arch-icon">🔥</div>
+      <div class="arch-title">Firebase Backend</div>
+      <div class="arch-desc">Firestore with real-time listeners, Firebase Auth (Email + Apple), and Cloud Functions as secure AI proxy layer.</div>
+      <div class="arch-tags">
+        <span class="tag">Firestore</span>
+        <span class="tag">Firebase Auth</span>
+        <span class="tag">Cloud Functions</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <div class="arch-icon">🧠</div>
+      <div class="arch-title">Claude AI Layer</div>
+      <div class="arch-desc">Expense categorization, spending analysis, monthly predictions, fraud detection, and smart financial advice.</div>
+      <div class="arch-tags">
+        <span class="tag">claude-opus-4-5</span>
+        <span class="tag">Structured prompts</span>
+        <span class="tag">JSON outputs</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <div class="arch-icon">🔐</div>
+      <div class="arch-title">Security First</div>
+      <div class="arch-desc">API keys in Firebase Secrets. Auth tokens verified server-side. Keychain for local storage. Firestore rules enforcing user isolation.</div>
+      <div class="arch-tags">
+        <span class="tag">Keychain</span>
+        <span class="tag">Firebase Secrets</span>
+        <span class="tag">Token auth</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <div class="arch-icon">💎</div>
+      <div class="arch-title">RevenueCat Monetization</div>
+      <div class="arch-desc">Monthly ($7.99) and Annual ($47.99) subscriptions. Free tier capped at manual tracking. AI features gated to Premium.</div>
+      <div class="arch-tags">
+        <span class="tag">RevenueCat</span>
+        <span class="tag">StoreKit 2</span>
+        <span class="tag">Entitlements</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Prompts -->
+<div style="background:rgba(108,99,255,0.04);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="section">
+    <div class="section-header">
+      <h2>AI <span class="gradient-text">Prompt Engineering</span></h2>
+      <p>Production-grade prompts designed for accuracy and structured JSON outputs</p>
+    </div>
+    <div class="prompt-block">
+      <div class="prompt-label">→ Expense Categorization</div>
+      <div class="prompt-text">You are a financial categorization AI. Categorize the following expense into EXACTLY one of these categories:
+Food & Drinks, Transport, Bills, Entertainment, Health, Shopping, Education, Travel, Subscription, Other.
+
+Expense details:
+- Description: Starbucks coffee
+- Amount: 6.50
+
+Rules:
+- Return ONLY the category name, nothing else
+- Match spelling exactly as listed above
+- Use context: "Netflix" → Subscription, "Uber" → Transport</div>
+    </div>
+    <div class="prompt-block">
+      <div class="prompt-label">→ Spending Analysis (3 Insights)</div>
+      <div class="prompt-text">You are a personal finance AI analyst. Analyze this spending data and provide exactly 3 financial insights.
+
+Spending Data: Total: 1247.80 | Food: 312.00 (25%) | Shopping: 220.00 (18%) | Transport: 148.00 (12%)
+Monthly Budget: USD 1500.00
+
+Return JSON array: [{"title":"...","description":"...","type":"spending_pattern|prediction|advice|anomaly","severity":"info|warning|critical"}]
+Each description under 50 words. Be specific with percentages.</div>
+    </div>
+    <div class="prompt-block">
+      <div class="prompt-label">→ Fraud / Anomaly Detection</div>
+      <div class="prompt-text">You are a financial fraud detection AI. Analyze these transactions for anomalies.
+
+Transactions:
+ID:abc123 Amount:340.00 Category:Shopping Date:2025-12-29T14:23:00Z
+ID:def456 Amount:6.50  Category:Food     Date:2025-12-29T08:11:00Z
+...
+
+Flag transactions: >3x category average, duplicates within 24h, unusual patterns.
+Return ONLY: {"flaggedIds": ["abc123"]}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Feature Table -->
+<div class="section">
+  <div class="section-header">
+    <h2>Free vs <span class="gradient-text">Premium</span></h2>
+    <p>Clear value proposition to maximize conversion</p>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden">
+    <table class="feature-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th style="text-align:center;color:var(--muted)">Free</th>
+          <th class="premium-col">✦ Premium</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Manual expense logging</td><td class="center"><span class="check">✓</span></td><td class="center"><span class="check">✓</span></td></tr>
+        <tr><td>Basic dashboard</td><td class="center"><span class="check">✓</span></td><td class="center"><span class="check">✓</span></td></tr>
+        <tr><td>Multi-currency support</td><td class="center"><span class="check">✓</span></td><td class="center"><span class="check">✓</span></td></tr>
+        <tr><td>Up to 50 expenses/month</td><td class="center"><span class="check">✓</span></td><td class="center"><span class="check">✓</span></td></tr>
+        <tr><td style="color:var(--purple);font-weight:600">AI auto-categorization</td><td class="center"><span class="cross">—</span></td><td class="center"><span class="check">✓</span></td></tr>
+        <tr><td style="color:var(--purple);font-weight:600">AI spending insights</td><td class="center"><span class="cross">—</span></td><td class="center"><span class="check">✓</span></td></tr>
+        <tr><td style="color:var(--purple);font-weight:600">Month-end predictions</td><td class="center"><span class="cross">—</span></td><td class="center"><span class="check">✓</span></td></tr>
+        <tr><td style="color:var(--purple);font-weight:600">Fraud anomaly detection</td><td class="center"><span class="cross">—</span></td><td class="center"><span class="check">✓</span></td></tr>
+        <tr><td style="color:var(--purple);font-weight:600">Unlimited expenses</td><td class="center"><span class="cross">—</span></td><td class="center"><span class="check">✓</span></td></tr>
+        <tr><td style="color:var(--purple);font-weight:600">PDF export reports</td><td class="center"><span class="cross">—</span></td><td class="center"><span class="check">✓</span></td></tr>
+      </tbody>
+    </table>
+    <div style="display:flex;gap:12px;padding:20px;border-top:1px solid var(--border)">
+      <div style="flex:1;padding:14px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);text-align:center">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Monthly</div>
+        <div style="font-size:22px;font-weight:700">$7.99</div>
+        <div style="font-size:10px;color:var(--muted)">per month</div>
+      </div>
+      <div style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(108,99,255,0.2),rgba(168,85,247,0.2));border-radius:12px;border:1px solid rgba(108,99,255,0.3);text-align:center">
+        <div style="font-size:9px;color:var(--green);font-weight:700;margin-bottom:4px">SAVE 40%</div>
+        <div style="font-size:22px;font-weight:700">$47.99</div>
+        <div style="font-size:10px;color:var(--muted)">per year ($4/mo)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Roadmap -->
+<div style="background:rgba(108,99,255,0.04);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="section">
+    <div class="section-header">
+      <h2>Product <span class="gradient-text">Roadmap</span></h2>
+    </div>
+    <div class="roadmap">
+      <div class="phase-card">
+        <div class="phase-label mvp">✓ MVP — Now</div>
+        <div class="phase-item">🔐 Email + Apple Auth</div>
+        <div class="phase-item">💸 Add Expenses</div>
+        <div class="phase-item">🧠 AI Categorization</div>
+        <div class="phase-item">📊 Dashboard + Charts</div>
+        <div class="phase-item">💡 AI Insights (3)</div>
+        <div class="phase-item">🎯 Budget Tracking</div>
+        <div class="phase-item">🌍 24 Currencies</div>
+        <div class="phase-item">🚨 Fraud Detection</div>
+      </div>
+      <div class="phase-card">
+        <div class="phase-label p2">→ Phase 2</div>
+        <div class="phase-item">🏦 Plaid Bank Sync</div>
+        <div class="phase-item">💬 AI Chat Assistant</div>
+        <div class="phase-item">🎤 Voice Input</div>
+        <div class="phase-item">📄 PDF Export</div>
+        <div class="phase-item">🔄 Subscription Detect</div>
+        <div class="phase-item">📸 Receipt Scanner</div>
+      </div>
+      <div class="phase-card">
+        <div class="phase-label p3">◇ Phase 3</div>
+        <div class="phase-item">🏛 Tax Summary</div>
+        <div class="phase-item">👥 Family Accounts</div>
+        <div class="phase-item">🤝 Split Expenses</div>
+        <div class="phase-item">📈 Investment Track</div>
+        <div class="phase-item">🌐 Web Dashboard</div>
+        <div class="phase-item">🤖 Auto-Save Rules</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  NeuroSpend — Built with <span>SwiftUI + Claude AI + Firebase</span><br>
+  Production architecture. Clean code. Global scale. 🌍
+</footer>
+
+</body>
+</html>
